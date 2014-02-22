@@ -1,5 +1,7 @@
 import sys
 import os
+import json
+from pprint import pprint
 
 
 def get_py_files(cwd):
@@ -17,32 +19,44 @@ def filter_flask_files(files):
     return filter(is_flask_file, files)
 
 
-def get_route_lines(files):
-    lines = []
-    for f in files:
-        with open(f, 'r') as data:
-            content = data.readlines()
-            for line in content:
-                if '@app.route(' in line:
-                    lines.append(line)
-                #if '@requires_auth' in line:
-                    #lines[-1] = (lines[-1][0], lines[-1][1], True)
-                #if "'''" in line or '"""' in line:
-                    #lines[-1] = (lines[-1][0], line.strip(), lines[-1][2])
-    return lines
+def clean(s):
+    s = s.strip()
+    s = s.replace('@app.route(','')
+    s = s.replace(')','')
+    return s
 
 
-def print_route_lines(files):
-    for f in files:
-        with open(f, 'r') as data:
-            content = data.readlines()
-            for line in content:
-                if '@app.route(' in line:
-                    print line
+def get_routes(f):
+    with open(f, 'r') as data:
+        content = data.readlines()
+    return [clean(x) for x in content if '@app.route(' in x or "'''" in x]
+
+
+def map_route_lines(files):
+    return map(get_routes, files)
+
+
+def get_json_routes(routes):
+    obj = {}
+    for group in routes:
+        for line in group:
+            if 'methods=[' in line:
+                sides = line.split(', methods=')
+                sides[0] = sides[0].replace("'",'')
+                sides[1] = sides[1].replace("'",'')
+                sides[1] = sides[1].replace("]",'')
+                sides[1] = sides[1].replace("[",'')
+                obj[sides[0]] = sides[1]
+    return obj
+
+
+def generate_json(content):
+    blob = {'version': '0.2',
+            'endpoints': []}
 
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2:
-        print filter_flask_files(get_py_files(sys.argv[1]))
+        pprint(map_route_lines(filter_flask_files(get_py_files(sys.argv[1]))))
     else:
-        print filter_flask_files(get_py_files(os.getcwd()))
+        pprint(map_route_lines(filter_flask_files(get_py_files(os.getcwd()))))
