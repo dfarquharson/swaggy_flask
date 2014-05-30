@@ -56,7 +56,6 @@ def generate_json(content):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 2:
-        pprint(map_route_lines(filter_flask_files(get_py_files(sys.argv[1]))))
-    else:
-        pprint(map_route_lines(filter_flask_files(get_py_files(os.getcwd()))))
+    pprint(map_route_lines(filter_flask_files(get_py_files(sys.argv[1]
+                                                           if len(sys.argv) >= 2
+                                                           else os.getcwd()))))
